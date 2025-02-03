@@ -32,8 +32,8 @@
 ### Клонирование репозитория
 
 ```sh
-$ git clone https://github.com/plasmatrip/music-library-api.git
-$ cd music-library-api
+$ git clone git@github.com:plasmatrip/muslib.git
+$ cd muslib
 ```
 
 ### Настройка окружения
