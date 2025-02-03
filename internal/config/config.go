@@ -10,11 +10,12 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
+	"github.com/plasmatrip/muslib/internal/logger"
 )
 
 const (
-	host          = "http://localhost:8080"
-	infoService   = "http://localhost:8081"
+	host          = "localhost:8080"
+	infoService   = "localhost:8081"
 	database      = "postgres://gratify:password@localhost:5432/gratify?sslmode=disable"
 	workers       = 5
 	workBuffer    = 5
@@ -22,13 +23,13 @@ const (
 )
 
 type Config struct {
-	Host              string `env:"RUN_ADDRESS"`
-	Database          string `env:"DATABASE_URI"`
-	InfoService       string `env:"INFO_SERVICE_ADDRESS"`
-	ClientTimeout     time.Duration
-	Workers           int
-	WorkBuffer        int
-	ProcessorInterval int
+	Host          string `env:"RUN_ADDRESS"`
+	Database      string `env:"DATABASE_URI"`
+	InfoService   string `env:"INFO_SERVICE_ADDRESS"`
+	LogLevel      string `env:"LOG_LEVEL"`
+	ClientTimeout time.Duration
+	Workers       int
+	WorkBuffer    int
 }
 
 func LoadConfig() (*Config, error) {
@@ -63,6 +64,9 @@ func LoadConfig() (*Config, error) {
 	var fInfoService string
 	cl.StringVar(&fInfoService, "s", infoService, "music info service address host:port")
 
+	var fLogLevel string
+	cl.StringVar(&fLogLevel, "l", logger.LogLevelInfo, "log level info|debug")
+
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
@@ -77,6 +81,10 @@ func LoadConfig() (*Config, error) {
 
 	if _, exist := os.LookupEnv("INFO_SERVICE_ADDRESS"); !exist {
 		cfg.InfoService = fInfoService
+	}
+
+	if _, exist := os.LookupEnv("LOG_LEVEL"); !exist {
+		cfg.LogLevel = fLogLevel
 	}
 
 	// if err := parseAddress(cfg); err != nil {

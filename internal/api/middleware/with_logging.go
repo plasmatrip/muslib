@@ -1,4 +1,4 @@
-package logger
+package middleware
 
 import (
 	"net/http"
@@ -31,7 +31,7 @@ func (r *loggingResponseWriter) WriteHeader(status int) {
 }
 
 func WithLogging(log logger.Logger) func(next http.Handler) http.Handler {
-	log.Sugar.Infoln("WithLogging")
+	log.Sugar.Infoln("handler logging started")
 
 	return func(next http.Handler) http.Handler {
 		start := time.Now()

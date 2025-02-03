@@ -2,44 +2,37 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/plasmatrip/muslib/internal/api/middleware/compress"
-	"github.com/plasmatrip/muslib/internal/api/middleware/logger"
+	"github.com/plasmatrip/muslib/internal/api/handlers"
+	"github.com/plasmatrip/muslib/internal/api/middleware"
+	"github.com/plasmatrip/muslib/internal/config"
+	"github.com/plasmatrip/muslib/internal/logger"
+	"github.com/plasmatrip/muslib/internal/storage"
 )
 
-func NewRouter(deps deps.Dependencies, controller *controller.Controller) *chi.Mux {
+func NewRouter(cfg config.Config, log logger.Logger, stor storage.Repository) *chi.Mux {
 
 	r := chi.NewRouter()
 
-	balance := balance.NewBalanceService(deps)
-	orders := orders.NewOrdersService(deps)
-	info := info.NewInfoService(deps)
+	handlers := handlers.Handlers{Config: cfg, Logger: log, Stor: stor}
 
-	r.Use(logger.WithLogging(deps.Logger))
-	r.Use(compress.WithCompressed)
+	r.Use(middleware.WithLogging(log), middleware.WithCompression)
 
-	r.Route("/api/user/orders", func(r chi.Router) {
-		r.Use(auth.Validate)
-		r.Post("/", orders.AddOrder)
-		r.Get("/", orders.GetOrders)
+	r.Route("/info", func(r chi.Router) {
+		r.Get("/", handlers.Info)
 	})
 
-	r.Route("/api/user/balance", func(r chi.Router) {
-		r.Use(auth.Validate)
-		r.Get("/", balance.GetBalance)
+	r.Route("/song", func(r chi.Router) {
+		r.Post("/", handlers.AddSong)
+		r.Put("/", handlers.UpdateSong)
+		r.Delete("/", handlers.DeleteSong)
 	})
 
-	r.Route("/api/user/balance/withdraw", func(r chi.Router) {
-		r.Use(auth.Validate)
-		r.Post("/", balance.Withdraw)
+	r.Route("/songs", func(r chi.Router) {
+		r.Get("/", handlers.GetSongs)
 	})
 
-	r.Route("/api/user/withdrawals", func(r chi.Router) {
-		r.Use(auth.Validate)
-		r.Get("/", balance.Withdrawals)
-	})
-
-	r.Route("/api/info", func(r chi.Router) {
-		r.Get("/", info.Ping)
+	r.Route("/lyrics", func(r chi.Router) {
+		r.Get("/", handlers.GetLyrics)
 	})
 
 	return r

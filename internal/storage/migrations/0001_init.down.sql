@@ -1,1 +1,5 @@
-DROP TABLE muslib
+BEGIN;
+
+DROP TABLE IF EXISTS music_library;
+
+COMMIT;

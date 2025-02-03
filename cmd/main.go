@@ -21,7 +21,7 @@ func main() {
 		panic(err)
 	}
 
-	log, err := logger.NewLogger()
+	log, err := logger.NewLogger(cfg.LogLevel)
 	if err != nil {
 		panic(err)
 	}
@@ -34,22 +34,16 @@ func main() {
 	}
 	defer db.Close()
 
-	deps := &deps.Dependencies{
-		Config: *cfg,
-		Logger: *log,
-		Repo:   *db,
-	}
-
-	ctrl := controller.NewController(cfg.ClientTimeout, *deps)
-	ctrl.StartWorkers(ctx)
-	ctrl.StartOrdersProcessor(ctx)
+	// ctrl := controller.NewController(cfg.ClientTimeout, *deps)
+	// ctrl.StartWorkers(ctx)
+	// ctrl.StartOrdersProcessor(ctx)
 
 	server := http.Server{
 		Addr: cfg.Host,
 		Handler: func(next http.Handler) http.Handler {
-			log.Sugar.Infow("The loyalty system \"Gophermart\" server is running. ", "Server address", cfg.Host, "Music info service address", cfg.InfoService)
+			log.Sugar.Infow("The Music Library server is running. ", "Server address", cfg.Host, "Music info service address", cfg.InfoService)
 			return next
-		}(router.NewRouter(*deps, ctrl)),
+		}(router.NewRouter(*cfg, *log, *db)),
 	}
 
 	go server.ListenAndServe()
