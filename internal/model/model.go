@@ -17,6 +17,25 @@ type SongDetail struct {
 	Link        string      `json:"link,omitempty"`
 }
 
+type Filter struct {
+	Group       *string
+	Song        *string
+	Text        *string
+	Link        *string
+	ReleaseFrom *time.Time
+	ReleaseTo   *time.Time
+	Limit       int
+	Offset      int
+}
+
+type VerseResponse struct {
+	Song        string `json:"song"`
+	Group       string `json:"group"`
+	Verse       string `json:"verse"`
+	VerseNum    int    `json:"verse_num"`
+	TotalVerses int    `json:"total_verses"`
+}
+
 type ReleaseDate time.Time
 
 func (c *ReleaseDate) UnmarshalJSON(b []byte) error {

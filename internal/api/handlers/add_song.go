@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
+	"fmt"
 	"net/http"
-	"time"
+	"net/url"
 
 	"github.com/plasmatrip/muslib/internal/model"
 )
@@ -26,42 +25,34 @@ func (h *Handlers) AddSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// params := url.Values{}
-	// params.Add("group", song.Group)
-	// params.Add("song", song.Song)
+	params := url.Values{}
+	params.Add("group", song.Group)
+	params.Add("song", song.Song)
 
-	// fullURL := fmt.Sprintf("%s/info?%s", h.Config.InfoService, params.Encode())
+	fullURL := fmt.Sprintf("%s/info?%s", h.Config.InfoService, params.Encode())
 
-	// req, err := http.NewRequest(http.MethodGet, fullURL, nil)
-	// if err != nil {
-	// 	h.Logger.Sugar.Infow("failed to create request", "error", err)
-	// 	http.Error(w, "error processing request", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// resp, err := h.Client.Do(req)
-	// if err != nil {
-	// 	h.Logger.Sugar.Infow("failed to send request", "error", err)
-	// 	http.Error(w, "error processing request", http.StatusInternalServerError)
-	// 	return
-	// }
-	// defer resp.Body.Close()
-
-	// if resp.StatusCode != http.StatusOK {
-	// 	h.Logger.Sugar.Infow("received non-200 response", "status: ", resp.StatusCode)
-	// 	http.Error(w, "error processing request", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	mockData := model.SongDetail{
-		ReleaseDate: model.ReleaseDate(time.Date(2006, 07, 16, 0, 0, 0, 0, time.UTC)),
-		Text:        "Ooh baby, don't you know I suffer?",
-		Link:        "https://www.youtube.com/watch?v=Xsp3_a-PMTw",
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
+	if err != nil {
+		h.Logger.Sugar.Infow("failed to create request", "error", err)
+		http.Error(w, "error processing request", http.StatusInternalServerError)
+		return
 	}
-	mockJSON, _ := json.Marshal(mockData)
 
-	if err := json.NewDecoder(io.NopCloser(bytes.NewReader(mockJSON))).Decode(&song); err != nil {
-		// if err := json.NewDecoder(resp.Body).Decode(&song); err != nil {
+	resp, err := h.Client.Do(req)
+	if err != nil {
+		h.Logger.Sugar.Infow("failed to send request", "error", err)
+		http.Error(w, "error processing request", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		h.Logger.Sugar.Infow("received non-200 response", "status: ", resp.StatusCode)
+		http.Error(w, "error processing request", http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&song); err != nil {
 		h.Logger.Sugar.Infow("failed to decode response", "error", err)
 		http.Error(w, "error processing request", http.StatusInternalServerError)
 		return
@@ -73,6 +64,5 @@ func (h *Handlers) AddSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }

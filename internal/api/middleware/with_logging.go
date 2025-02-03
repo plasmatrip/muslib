@@ -31,13 +31,12 @@ func (r *loggingResponseWriter) WriteHeader(status int) {
 }
 
 func WithLogging(log logger.Logger) func(next http.Handler) http.Handler {
-	log.Sugar.Infoln("handler logging started")
+	log.Sugar.Debug("handler logging started")
 
 	return func(next http.Handler) http.Handler {
 		start := time.Now()
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
-
 			responseData := &responseData{
 				status: 0,
 				size:   0,

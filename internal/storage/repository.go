@@ -5,6 +5,8 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -29,10 +31,10 @@ func NewRepository(ctx context.Context, dsn string, log logger.Logger) (*Reposit
 		if !errors.Is(err, migrate.ErrNoChange) {
 			return nil, err
 		} else {
-			log.Sugar.Infoln("the database exists, there is nothing to migrate")
+			log.Sugar.Debugw("the database exists, there is nothing to migrate")
 		}
 	} else {
-		log.Sugar.Infoln("database migration was successful")
+		log.Sugar.Debugw("database migration was successful")
 	}
 
 	// открываем БД
@@ -132,4 +134,101 @@ func (r Repository) UpdateSong(ctx context.Context, song model.Song) error {
 	}
 
 	return nil
+}
+
+func (r Repository) GetSongs(ctx context.Context, filter *model.Filter) ([]model.Song, error) {
+	args := []interface{}{}
+	argID := 1
+
+	var query = queries.SelectSongs
+
+	if filter.Group != nil {
+		query += ` AND group_name ILIKE $` + strconv.Itoa(argID)
+		args = append(args, "%"+*filter.Group+"%")
+		argID++
+	}
+	if filter.Song != nil {
+		query += ` AND song_name ILIKE $` + strconv.Itoa(argID)
+		args = append(args, "%"+*filter.Song+"%")
+		argID++
+	}
+	if filter.ReleaseFrom != nil {
+		query += ` AND release_date >= $` + strconv.Itoa(argID)
+		args = append(args, *filter.ReleaseFrom)
+		argID++
+	}
+	if filter.ReleaseTo != nil {
+		query += ` AND release_date <= $` + strconv.Itoa(argID)
+		args = append(args, *filter.ReleaseTo)
+		argID++
+	}
+	if filter.Text != nil {
+		query += ` AND lyrics ILIKE $` + strconv.Itoa(argID)
+		args = append(args, "%"+*filter.Text+"%")
+		argID++
+	}
+	if filter.Link != nil {
+		query += ` AND link ILIKE $` + strconv.Itoa(argID)
+		args = append(args, "%"+*filter.Link+"%")
+		argID++
+	}
+
+	query += ` ORDER BY release_date DESC LIMIT $` + strconv.Itoa(argID)
+	args = append(args, filter.Limit)
+	argID++
+	query += ` OFFSET $` + strconv.Itoa(argID)
+	args = append(args, filter.Offset)
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var songs []model.Song
+	for rows.Next() {
+		var s model.Song
+		var rd time.Time
+		err := rows.Scan(&s.Group, &s.Song, &rd, &s.Text, &s.Link)
+		if err != nil {
+			return nil, err
+		}
+		s.ReleaseDate = model.ReleaseDate(rd)
+		songs = append(songs, s)
+	}
+
+	return songs, nil
+}
+
+func (r Repository) GetLyrics(ctx context.Context, song model.Song, verseNum int) (model.VerseResponse, error) {
+	var verse model.VerseResponse
+	var lyrics string
+
+	err := r.db.QueryRow(ctx, queries.SelectSong, pgx.NamedArgs{
+		"group": song.Group,
+		"song":  song.Song,
+	}).Scan(&lyrics)
+
+	if err != nil {
+		r.log.Sugar.Debugw("song not found", "group", song.Group, "song", song.Song, "error", err)
+		return verse, err
+	}
+
+	// Разбиваем на куплеты
+	verses := strings.Split(lyrics, "\n\n")
+	totalVerses := len(verses)
+
+	if verseNum > totalVerses {
+		r.log.Sugar.Debugw("verse number out of range", "verse number", verseNum, "group", song.Group, "song", song.Song, "total_verses", totalVerses)
+		return verse, errors.New("verse number out of range. total verses: " + strconv.Itoa(totalVerses))
+	}
+
+	// Формируем ответ
+	verse.Group = song.Group
+	verse.Song = song.Song
+	verse.Verse = verses[verseNum-1]
+	verse.VerseNum = verseNum
+	verse.TotalVerses = totalVerses
+
+	return verse, nil
 }

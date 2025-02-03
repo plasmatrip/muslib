@@ -15,7 +15,7 @@ func NewRouter(cfg config.Config, log logger.Logger, stor storage.Repository) *c
 
 	handlers := handlers.Handlers{Config: cfg, Logger: log, Stor: stor}
 
-	r.Use(middleware.WithLogging(log), middleware.WithCompression)
+	r.Use(middleware.WithLogging(log), middleware.WithCompression(log))
 
 	r.Route("/info", func(r chi.Router) {
 		r.Get("/", handlers.Info)

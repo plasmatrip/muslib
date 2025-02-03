@@ -25,6 +25,7 @@ func NewLogger(level string) (*Logger, error) {
 	}
 
 	zap, err := config.Build()
+	zap.Sugar().Infow("logger initialized", "level", level)
 	return &Logger{zap: zap, Sugar: zap.Sugar()}, err
 }
 

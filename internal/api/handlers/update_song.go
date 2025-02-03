@@ -29,6 +29,7 @@ func (h *Handlers) UpdateSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.Logger.Sugar.Infow("song updated successfully", "group", song.Group, "song", song.Song)
 	// w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }

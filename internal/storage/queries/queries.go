@@ -19,4 +19,16 @@ const (
 			link = CASE WHEN TRIM(@link) != '' THEN @link ELSE link END
 		WHERE group_name = @group_name AND song_name = @song_name;
 	`
+
+	SelectSongs = `
+		SELECT group_name, song_name, release_date, lyrics, link
+		FROM music_library
+		WHERE 1=1
+	`
+
+	SelectSong = `
+		SELECT lyrics
+		FROM music_library
+		WHERE group_name = @group AND song_name = @song;
+	`
 )
