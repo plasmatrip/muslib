@@ -14,6 +14,7 @@ type Logger struct {
 	Sugar *zap.SugaredLogger
 }
 
+// NewLogger создает новый логгер
 func NewLogger(level string) (*Logger, error) {
 	var config zap.Config
 
@@ -29,6 +30,7 @@ func NewLogger(level string) (*Logger, error) {
 	return &Logger{zap: zap, Sugar: zap.Sugar()}, err
 }
 
+// Close закрывает логгер
 func (l *Logger) Close() {
 	l.zap.Sync()
 }

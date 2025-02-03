@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// Info возвращает информацию о статусе БД
 func (h *Handlers) Info(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 

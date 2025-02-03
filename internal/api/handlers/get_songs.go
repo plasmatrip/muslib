@@ -26,6 +26,7 @@ func (h *Handlers) GetSongs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Проверяем наличие песен
 	if len(songs) == 0 {
 		h.Logger.Sugar.Debugw("no songs found. filter:", "group", filter.Group,
 			"song", filter.Song, "text", filter.Text, "link", filter.Link, "release_from", filter.ReleaseFrom, "release_to", filter.ReleaseTo)
@@ -33,15 +34,18 @@ func (h *Handlers) GetSongs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.Logger.Sugar.Debugw("got songs", "count", len(songs))
+
 	// Отправляем JSON-ответ
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(songs)
 }
 
+// parseQueryParams разбирает параметры запроса на параметры фильтрации
 func parseQueryParams(r *http.Request) (*model.Filter, error) {
 	filter := &model.Filter{
-		Limit:  10,
-		Offset: 0,
+		Limit: 10,
+		Page:  0,
 	}
 
 	query := r.URL.Query()
@@ -81,12 +85,12 @@ func parseQueryParams(r *http.Request) (*model.Filter, error) {
 		}
 		filter.Limit = limit
 	}
-	if v := query.Get("offset"); v != "" {
-		offset, err := strconv.Atoi(v)
-		if err != nil || offset < 0 {
+	if v := query.Get("page"); v != "" {
+		page, err := strconv.Atoi(v)
+		if err != nil || page < 0 {
 			return nil, err
 		}
-		filter.Offset = offset
+		filter.Page = page * filter.Limit
 	}
 
 	return filter, nil

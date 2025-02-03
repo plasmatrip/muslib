@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,33 +9,21 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
-	"github.com/plasmatrip/muslib/internal/logger"
 )
 
-const (
-	host          = "localhost:8080"
-	infoService   = "localhost:8081"
-	database      = "postgres://gratify:password@localhost:5432/gratify?sslmode=disable"
-	workers       = 5
-	workBuffer    = 5
-	clientTimeout = time.Second * 5
-)
+const clientTimeout = time.Second * 5 //таймаут запроса к внешнему сервису
 
 type Config struct {
-	Host          string `env:"RUN_ADDRESS"`
-	Database      string `env:"DATABASE_URI"`
-	InfoService   string `env:"INFO_SERVICE_ADDRESS"`
-	LogLevel      string `env:"LOG_LEVEL"`
-	ClientTimeout time.Duration
-	Workers       int
-	WorkBuffer    int
+	Host          string        `env:"RUN_ADDRESS"`          //адрес веб-сервера
+	Database      string        `env:"DATABASE_URI"`         //DSN базы данных
+	InfoService   string        `env:"INFO_SERVICE_ADDRESS"` //адрес внешнего сервиса
+	LogLevel      string        `env:"LOG_LEVEL"`            //уровень логирования
+	ClientTimeout time.Duration //таймаут запроса к внешнему сервису
 }
 
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		ClientTimeout: clientTimeout,
-		Workers:       workers,
-		WorkBuffer:    workBuffer,
 	}
 
 	ex, err := os.Executable()
@@ -44,74 +31,31 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
+	//пытаемся загрузить .env файл
 	if err := godotenv.Load(filepath.Dir(ex) + "/.env"); err != nil {
 		return nil, errors.New(".env not found")
 	}
-
-	cl := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
 	// читаем переменные окружения, при ошибке прокидываем ее наверх
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to read environment variable: %w", err)
 	}
 
-	var fHost string
-	cl.StringVar(&fHost, "a", host, "server address host:port")
-
-	var fDatabase string
-	cl.StringVar(&fDatabase, "d", database, "database DSN")
-
-	var fInfoService string
-	cl.StringVar(&fInfoService, "s", infoService, "music info service address host:port")
-
-	var fLogLevel string
-	cl.StringVar(&fLogLevel, "l", logger.LogLevelInfo, "log level info|debug")
-
-	if err := cl.Parse(os.Args[1:]); err != nil {
-		return nil, fmt.Errorf("failed to parse flags: %w", err)
-	}
-
 	if _, exist := os.LookupEnv("RUN_ADDRESS"); !exist {
-		cfg.Host = fHost
+		return nil, errors.New("RUN_ADDRESS not found")
 	}
 
 	if _, exist := os.LookupEnv("DATABASE_URI"); !exist {
-		cfg.Database = fDatabase
+		return nil, errors.New("DATABASE_URI not found")
 	}
 
 	if _, exist := os.LookupEnv("INFO_SERVICE_ADDRESS"); !exist {
-		cfg.InfoService = fInfoService
+		return nil, errors.New("INFO_SERVICE_ADDRESS not found")
 	}
 
 	if _, exist := os.LookupEnv("LOG_LEVEL"); !exist {
-		cfg.LogLevel = fLogLevel
+		return nil, errors.New("LOG_LEVEL not found")
 	}
-
-	// if err := parseAddress(cfg); err != nil {
-	// 	return nil, fmt.Errorf("port parsing error: %w", err)
-	// }
 
 	return cfg, nil
 }
-
-// func parseAddress(cfg *Config) error {
-// 	var parts []string
-// 	_, addr, found := strings.Cut(cfg.Host, "://")
-// 	if found {
-// 		parts = strings.Split(addr, ":")
-// 	} else {
-// 		parts = strings.Split(cfg.Host, ":")
-// 	}
-
-// 	if len(parts) == 2 {
-// 		if len(parts[0]) == 0 || len(parts[1]) == 0 {
-// 			cfg.Host = host + ":" + port
-// 			return nil
-// 		}
-
-// 		_, err := strconv.ParseInt(parts[1], 10, 64)
-// 		return err
-// 	}
-// 	cfg.Host = host + ":" + port
-// 	return nil
-// }

@@ -52,6 +52,7 @@ func NewRepository(ctx context.Context, dsn string, log logger.Logger) (*Reposit
 //go:embed migrations/*.sql
 var migrationsDir embed.FS
 
+// StartMigration запускает миграцию
 func StartMigration(dsn string) error {
 	d, err := iofs.New(migrationsDir, "migrations")
 	if err != nil {
@@ -71,14 +72,17 @@ func StartMigration(dsn string) error {
 	return nil
 }
 
+// Ping проверяет подключение к БД
 func (r Repository) Ping(ctx context.Context) error {
 	return r.db.Ping(ctx)
 }
 
+// Close закрывает подключение к БД
 func (r Repository) Close() {
 	r.db.Close()
 }
 
+// AddSong добавляет песню
 func (r Repository) AddSong(ctx context.Context, song model.Song) error {
 	ct, err := r.db.Exec(ctx, queries.AddSong, pgx.NamedArgs{
 		"group_name":   song.Group,
@@ -99,6 +103,7 @@ func (r Repository) AddSong(ctx context.Context, song model.Song) error {
 	return nil
 }
 
+// DeleteSong удаляет песню
 func (r Repository) DeleteSong(ctx context.Context, song model.Song) error {
 	ct, err := r.db.Exec(ctx, queries.DeleteSong, pgx.NamedArgs{
 		"group_name": song.Group,
@@ -116,6 +121,7 @@ func (r Repository) DeleteSong(ctx context.Context, song model.Song) error {
 	return nil
 }
 
+// UpdateSong обновляет песню
 func (r Repository) UpdateSong(ctx context.Context, song model.Song) error {
 	ct, err := r.db.Exec(ctx, queries.UpdateSong, pgx.NamedArgs{
 		"group_name":   song.Group,
@@ -136,6 +142,7 @@ func (r Repository) UpdateSong(ctx context.Context, song model.Song) error {
 	return nil
 }
 
+// GetSongs возвращает список песен по фильтру с пагинацией
 func (r Repository) GetSongs(ctx context.Context, filter *model.Filter) ([]model.Song, error) {
 	args := []interface{}{}
 	argID := 1
@@ -173,11 +180,11 @@ func (r Repository) GetSongs(ctx context.Context, filter *model.Filter) ([]model
 		argID++
 	}
 
-	query += ` ORDER BY release_date DESC LIMIT $` + strconv.Itoa(argID)
+	query += ` ORDER BY release_date LIMIT $` + strconv.Itoa(argID)
 	args = append(args, filter.Limit)
 	argID++
 	query += ` OFFSET $` + strconv.Itoa(argID)
-	args = append(args, filter.Offset)
+	args = append(args, filter.Page)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
@@ -200,6 +207,8 @@ func (r Repository) GetSongs(ctx context.Context, filter *model.Filter) ([]model
 	return songs, nil
 }
 
+// GetLyrics возвращает текст песни с пагинацией по куплетам
+// Считаем начало каждого куплета как двойной перевод строки
 func (r Repository) GetLyrics(ctx context.Context, song model.Song, verseNum int) (model.VerseResponse, error) {
 	var verse model.VerseResponse
 	var lyrics string

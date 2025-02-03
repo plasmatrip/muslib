@@ -9,6 +9,7 @@ import (
 	"github.com/plasmatrip/muslib/internal/storage"
 )
 
+// NewRouter создает новый маршрутизатор
 func NewRouter(cfg config.Config, log logger.Logger, stor storage.Repository) *chi.Mux {
 
 	r := chi.NewRouter()

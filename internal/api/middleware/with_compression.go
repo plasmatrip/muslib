@@ -67,11 +67,13 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// WithCompression устанавливает сжатие
 func WithCompression(log logger.Logger) func(next http.Handler) http.Handler {
 	log.Sugar.Debug("compression logging started")
 
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
+			// Устанавливаем сжатие
 			ow := w
 			acceptEncoding := r.Header.Get("Accept-Encoding")
 			supportGzip := strings.Contains(acceptEncoding, "gzip")
@@ -85,6 +87,7 @@ func WithCompression(log logger.Logger) func(next http.Handler) http.Handler {
 				ow = cw
 			}
 
+			// Проверяем, что клиент отправляет сжатый контент
 			contentEncoding := r.Header.Get("Content-Encoding")
 			sendsGzip := strings.Contains(contentEncoding, "gzip")
 			if sendsGzip {

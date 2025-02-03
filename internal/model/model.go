@@ -25,7 +25,7 @@ type Filter struct {
 	ReleaseFrom *time.Time
 	ReleaseTo   *time.Time
 	Limit       int
-	Offset      int
+	Page        int
 }
 
 type VerseResponse struct {

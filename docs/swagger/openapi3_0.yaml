@@ -1,0 +1,206 @@
+openapi: 3.0.0
+info:
+  title: Music Library API
+  version: 1.0.0
+  description: API для управления онлайн библиотекой песен
+paths:
+  /song:
+    post:
+      summary: Добавить новую песню
+      operationId: AddSong
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Song'
+      responses:
+        '200':
+          description: Песня успешно добавлена
+        '400':
+          description: Неверный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+    delete:
+      summary: Удалить песню
+      operationId: DeleteSong
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Song'
+      responses:
+        '200':
+          description: Песня успешно удалена
+        '400':
+          description: Неверный запрос\Песня не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+    put:
+      summary: Обновить информацию о песне по ID
+      operationId: updateSong
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SongDetail'
+      responses:
+        '200':
+          description: Песня успешно обновлена
+        '400':
+          description: Неверный запрос\Песня не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+  /songs:
+    get:
+      summary: Получить список песен
+      operationId: getSongs
+      parameters:
+        - name: group
+          in: query
+          schema:
+            type: string
+          description: Фильтр по названию группы
+        - name: song
+          in: query
+          schema:
+            type: string
+          description: Фильтр по названию песни
+        - name: text
+          in: query
+          schema:
+            type: string
+          description: Фильтр по тексту песни
+        - name: link
+          in: query
+          schema:
+            type: string
+          description: Фильтр по ссылке на песню
+        - name: release_from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Фильтр по дате релиза (от)
+        - name: release_to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Фильтр по дате релиза (до)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Номер страницы для пагинации
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Размер страницы для пагинации
+      responses:
+        '200':
+          description: Список песен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SongDetail'
+        '204':
+          description: Песни не найдены
+        '400':
+          description: Неверный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /lyrics:
+    get:
+      summary: Получить текст песни с пагинацией по куплетам
+      operationId: getSongLyrics
+      parameters:
+        - name: group
+          in: query
+          schema:
+            type: string
+          description: Название группы
+        - name: song
+          in: query
+          schema:
+            type: string
+          description: Название песни
+        - name: verse
+          in: query
+          schema:
+            type: integer
+          description: Название песни
+      responses:
+        '200':
+          description: Текст куплета
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerseResponce'
+        '400':
+          description: Неверный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /info:
+    get:
+      summary: Получить информацию о работе БД
+      operationId: getInfo
+      responses:
+        '200':
+          description: БД запущена     
+        '500':
+          description: Внутренняя ошибка сервера
+components:
+  schemas:
+    Song:
+      type: object
+      properties:
+        group:
+          type: string
+          example: "Muse"
+        song:
+          type: string
+          example: "Supermassive Black Hole"
+    SongDetail:
+      type: object
+      properties:
+        group:
+          type: string
+          example: "Muse"
+        song:
+          type: string
+          example: "Supermassive Black Hole"
+        release_date:
+          type: string
+          format: date
+        lyrics:
+          type: string
+          example: "Ooh baby, don't you know I suffer?\nOoh baby, can you hear me moan?\nYou caught me under false pretenses\nHow long before you let me go?\n\nOoh\nYou set my soul alight\nOoh\nYou set my soul alight"
+        link:
+          type: string
+          example: "https://www.youtube.com/watch?v=Xsp3_a-PMTw"
+    VerseResponce:
+        type: object
+        properties:
+          group:
+            type: string
+            example: "Muse"
+          song:
+           type: string
+           example: "Supermassive Black Hole"
+          verse:
+           type: string
+           example: "Ooh baby, don't you know I suffer?\nOoh baby, can you hear me moan?\nYou caught me under false pretenses\nHow long before you let me go?\n\nOoh\nYou set my soul alight\nOoh\nYou set my soul alight"
+          verse_num:
+           type: integer
+           example: "1"
+          total_verse:
+           type: integer
+           example: "4"

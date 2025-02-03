@@ -30,6 +30,7 @@ func (r *loggingResponseWriter) WriteHeader(status int) {
 	r.responseData.status = status
 }
 
+// WithLogging устанавливает логирование
 func WithLogging(log logger.Logger) func(next http.Handler) http.Handler {
 	log.Sugar.Debug("handler logging started")
 

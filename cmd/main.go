@@ -13,20 +13,24 @@ import (
 )
 
 func main() {
+	// для грейсфул шатдауна слушаем сигнал ОС
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
+	// загружаем конфиг
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		panic(err)
 	}
 
+	// инициализируем логгер
 	log, err := logger.NewLogger(cfg.LogLevel)
 	if err != nil {
 		panic(err)
 	}
 	defer log.Close()
 
+	// инициализируем БД
 	db, err := storage.NewRepository(ctx, cfg.Database, *log)
 	if err != nil {
 		log.Sugar.Infow("database connection error: ", err)
@@ -34,10 +38,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// ctrl := controller.NewController(cfg.ClientTimeout, *deps)
-	// ctrl.StartWorkers(ctx)
-	// ctrl.StartOrdersProcessor(ctx)
-
+	// запускаем веб-сервер
 	server := http.Server{
 		Addr: cfg.Host,
 		Handler: func(next http.Handler) http.Handler {
@@ -48,6 +49,7 @@ func main() {
 
 	go server.ListenAndServe()
 
+	// ждем сигнал ОС
 	<-ctx.Done()
 
 	server.Shutdown(context.Background())
